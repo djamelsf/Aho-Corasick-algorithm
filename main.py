@@ -57,17 +57,37 @@ class AhoCorasick(ArbreLexico):
         self.lgrMots = [len(mot) for mot in ensMots]
         # self.consSuppleanceSortie()
         
+    def suffix(self,word):
+        table=[]
+        for i in range(0,len(word)):
+            temp=''
+            for j in range(0,i):
+                temp+=word[j]
+            temp+=word[i]
+            table.append(temp)
+        return tuple(table)
+    
+    def table_suffix(self,x):
+        table=[]
+        for i in x:
+            s=self.suffix(i)
+            for j in s:
+                if j not in table:
+                    table.append(j)
+        return tuple(table)
+    
         
 
     def transition(self,etat,car):
         """
         retourne le noeud atteint après lecture de car partant du noeud etat
         """
-        while etat!='' and self.fils(etat,car) is None:
+        while etat.label!='' and self.fils(etat,car) is None:
             etat=etat.suppleance
         if self.fils(etat,car) is not None:
             etat=self.fils(etat,car)
         return etat
+        #  À ÉCRIRE
     
     def fils(self,etat,car):
         for i in etat:
@@ -86,6 +106,7 @@ class AhoCorasick(ArbreLexico):
         for p in self.values():
             p.suppleance = self
             laFile.append(p)
+        #  À COMPLÉTER
         while len(laFile) > 0:
             cour = laFile.popleft()
             for i in cour:
@@ -100,6 +121,20 @@ class AhoCorasick(ArbreLexico):
                     p.sortie=(p.suppleance).sortie
                     
                 #######
+    def analyser(self,texte):
+        occ=0
+        etat=self
+        for car in texte:
+            while etat.label!='' and self.fils(etat,car) is None:
+                etat=etat.suppleance
+            if self.fils(etat,car) is not None:
+                etat=self.fils(etat,car)
+                if len(etat.sortie)>0:
+                    occ=occ+len(etat.sortie)
+        print('OCC:')
+        print(occ)
+        return occ
+            
                 
    
         
@@ -149,3 +184,5 @@ if __name__ == '__main__':
     print('----- qu 2 & 3. la fonction de suppléance')
     a.consSuppleanceSortie()
     print(a)
+    
+    a.analyser(texte)
