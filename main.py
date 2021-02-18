@@ -1,4 +1,6 @@
 import collections
+import sys
+import time
 
 class ArbreLexico(dict):
     """ 
@@ -55,28 +57,9 @@ class AhoCorasick(ArbreLexico):
         ArbreLexico.__init__(self,ensMots)
         self.ensMots = ensMots
         self.lgrMots = [len(mot) for mot in ensMots]
-        # self.consSuppleanceSortie()
-        
-    def suffix(self,word):
-        table=[]
-        for i in range(0,len(word)):
-            temp=''
-            for j in range(0,i):
-                temp+=word[j]
-            temp+=word[i]
-            table.append(temp)
-        return tuple(table)
-    
-    def table_suffix(self,x):
-        table=[]
-        for i in x:
-            s=self.suffix(i)
-            for j in s:
-                if j not in table:
-                    table.append(j)
-        return tuple(table)
-    
-        
+        self.labeliser()
+        self.consSuppleanceSortie()
+                
 
     def transition(self,etat,car):
         """
@@ -122,25 +105,24 @@ class AhoCorasick(ArbreLexico):
                     
                 #######
     def analyser(self,texte):
-        occ=0
+        liste=[]
         etat=self
-        for car in texte:
+        for index,car in enumerate(texte):
             while etat.label!='' and self.fils(etat,car) is None:
                 etat=etat.suppleance
             if self.fils(etat,car) is not None:
                 etat=self.fils(etat,car)
                 if len(etat.sortie)>0:
-                    occ=occ+len(etat.sortie)
-        print('OCC:')
-        print(occ)
-        return occ
+                    for z in etat.sortie:
+                        t=(z,index)
+                        liste.append(t)
+        return liste
             
                 
    
         
         
     def __repr__(self):
-        self.labeliser()
         self.label = 'mot vide'
         laFile = collections.deque()
         s = "** %s\n" %self.label
@@ -159,30 +141,21 @@ class AhoCorasick(ArbreLexico):
 
 if __name__ == '__main__':
 
-    print('----- qu 1. Test transitions')
+    with open(sys.argv[1], 'r') as my_file:
+        texte=my_file.read()
+        texte = texte.strip()
 
-    a = AhoCorasick(('ab','babb','bb'))
-    #a = AhoCorasick(('aa','abaab','ba'))
+    print("Veuillez entrer les motifs à rechercher dans le texte,  CTRL+D pour marquer la fin des mots")
+    motifs=[]
+    for line in sys.stdin:
+        motifs.append(line[:len(line)-1])
 
-    "Dans un premier temps on construit la fonction de suppléance à la main"
-    for u,v in (('a',''), ('b',''), ('bb','b'), ('ba','a'), ('ab','b'), ('bab','ab'), ('babb','bb')):
-        a.recherche(u).suppleance = a.recherche(v)
-    print(a)
+    a = AhoCorasick(tuple(motifs))
 
+    start = time.time()
+    res=a.analyser(texte)
+    end = time.time()
 
-    "On définit alors la méthode transition de la classe AhoCorasick"
-    texte = "bababbaabb"
-    print("Trace d'exécution sur le texte %s" %texte)
-    cour = a
-    print('état initial : '+cour.label)
-    for car in texte:
-        cour = a.transition(cour,car)
-        print('via '+car+' : '+cour.label)
-
-
-
-    print('----- qu 2 & 3. la fonction de suppléance')
-    a.consSuppleanceSortie()
-    print(a)
-    
-    a.analyser(texte)
+    print(res)
+    print("nombre d'occurrences=%s" %(len(res)))
+    print("temps d'execution %f" %(end - start))
